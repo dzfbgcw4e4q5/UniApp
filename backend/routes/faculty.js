@@ -483,14 +483,46 @@ router.put('/self-tasks/:id/link', auth, async (req, res) => {
 // Mark self-assigned task as complete
 router.patch('/self-tasks/:id/complete', auth, async (req, res) => {
   const { id } = req.params;
+  console.log(`Attempting to mark task ${id} as complete for user ${req.user.id}`);
+  
   try {
-    await db.query(
-      'UPDATE tasks SET status = ? WHERE id = ? AND assigned_to = ?',
-      ['completed', id, req.user.id]
+    // First check if the task exists and is assigned to this user
+    const [tasks] = await db.query(
+      'SELECT * FROM tasks WHERE id = ?',
+      [id]
     );
+    
+    if (tasks.length === 0) {
+      console.log(`Task ${id} not found`);
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    const task = tasks[0];
+    
+    // Check if the task is assigned to the current user
+    // Convert both to numbers for comparison to avoid type mismatch
+    if (Number(task.assigned_to) !== Number(req.user.id)) {
+      console.log(`Task ${id} is assigned to user ${task.assigned_to} (${typeof task.assigned_to}), not to the current user ${req.user.id} (${typeof req.user.id})`);
+      return res.status(403).json({ error: 'You can only complete tasks assigned to you' });
+    }
+    
+    // Update the task status
+    console.log(`Executing UPDATE query: UPDATE tasks SET status = 'completed' WHERE id = ${id}`);
+    const [result] = await db.query(
+      'UPDATE tasks SET status = ? WHERE id = ?',
+      ['completed', Number(id)]
+    );
+    
+    if (result.affectedRows === 0) {
+      console.log(`No rows affected when completing task ${id}`);
+      return res.status(500).json({ error: 'Failed to complete task' });
+    }
+    
+    console.log(`Successfully marked task ${id} as complete`);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to update task status' });
+    console.error('Error completing task:', err);
+    res.status(500).json({ error: 'Failed to update task status: ' + err.message });
   }
 });
 
@@ -499,20 +531,57 @@ router.patch('/self-tasks/:id/status', auth, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   
+  console.log(`Attempting to update task ${id} status to ${status} for user ${req.user.id}`);
+  
   // Validate status
   const validStatuses = ['pending', 'in_progress', 'completed'];
   if (!status || !validStatuses.includes(status)) {
+    console.log(`Invalid status value: ${status}`);
     return res.status(400).json({ error: 'Invalid status value' });
   }
   
   try {
-    await db.query(
-      'UPDATE tasks SET status = ? WHERE id = ? AND assigned_to = ?',
-      [status, id, req.user.id]
+    console.log(`User ID from auth: ${req.user.id} (${typeof req.user.id})`);
+    
+    // First check if the task exists and is assigned to this user
+    const [tasks] = await db.query(
+      'SELECT * FROM tasks WHERE id = ?',
+      [id]
     );
+    
+    console.log(`Task query result:`, tasks.length > 0 ? JSON.stringify(tasks[0]) : 'No task found');
+    
+    if (tasks.length === 0) {
+      console.log(`Task ${id} not found`);
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    const task = tasks[0];
+    
+    // Check if the task is assigned to the current user
+    // Convert both to numbers for comparison to avoid type mismatch
+    if (Number(task.assigned_to) !== Number(req.user.id)) {
+      console.log(`Task ${id} is assigned to user ${task.assigned_to} (${typeof task.assigned_to}), not to the current user ${req.user.id} (${typeof req.user.id})`);
+      return res.status(403).json({ error: 'You can only update tasks assigned to you' });
+    }
+    
+    // Update the task status
+    console.log(`Executing UPDATE query: UPDATE tasks SET status = '${status}' WHERE id = ${id}`);
+    const [result] = await db.query(
+      'UPDATE tasks SET status = ? WHERE id = ?',
+      [status, Number(id)]
+    );
+    
+    if (result.affectedRows === 0) {
+      console.log(`No rows affected when updating task ${id}`);
+      return res.status(500).json({ error: 'Failed to update task status' });
+    }
+    
+    console.log(`Successfully updated task ${id} status to ${status}`);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to update task status' });
+    console.error('Error updating task status:', err);
+    res.status(500).json({ error: 'Failed to update task status: ' + err.message });
   }
 });
 

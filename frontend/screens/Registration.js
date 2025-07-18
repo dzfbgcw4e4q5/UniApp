@@ -110,9 +110,36 @@ const Registration = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      const errorMessage =
-        error.response?.data?.error || 'Registration failed. Please try again.';
-      Alert.alert('Registration Error', `Unable to complete university registration: ${errorMessage}. Please contact the university IT support if this issue persists.`);
+      
+      // Handle specific error cases
+      if (error.response?.status === 400) {
+        const errorMessage = error.response?.data?.error || 'Registration failed';
+        if (errorMessage.includes('Email already registered')) {
+          Alert.alert(
+            'Email Already Registered', 
+            'This email address is already registered. Please use a different email or try logging in instead.',
+            [
+              { text: 'Try Different Email', style: 'default' },
+              { text: 'Go to Login', onPress: () => navigation.navigate('Login') }
+            ]
+          );
+        } else {
+          Alert.alert('Registration Error', `Unable to complete registration: ${errorMessage}`);
+        }
+      } else if (error.response?.status === 500) {
+        Alert.alert(
+          'Server Error', 
+          'The registration service is temporarily unavailable. Please try again later or contact IT support.'
+        );
+      } else if (error.message && error.message.includes('Network Error')) {
+        Alert.alert(
+          'Connection Error', 
+          'Unable to connect to the university server. Please check your internet connection and try again.'
+        );
+      } else {
+        const errorMessage = error.response?.data?.error || 'Registration failed. Please try again.';
+        Alert.alert('Registration Error', `Unable to complete university registration: ${errorMessage}. Please contact the university IT support if this issue persists.`);
+      }
     } finally {
       setIsLoading(false);
     }

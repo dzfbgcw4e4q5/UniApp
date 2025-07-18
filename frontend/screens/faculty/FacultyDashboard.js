@@ -404,7 +404,13 @@ const HomeScreen = ({ navigation, facultyProfile }) => {
   const updateTaskStatus = async (taskId, newStatus) => {
     try {
       setIsLoading(true);
+      console.log(`Updating task ${taskId} status to ${newStatus}`);
+      
       const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Authentication Error', 'Please log in again.');
+        return;
+      }
       
       let endpoint;
       let requestBody = {};
@@ -412,15 +418,34 @@ const HomeScreen = ({ navigation, facultyProfile }) => {
       if (newStatus === 'completed') {
         // Use the specific complete endpoint for backward compatibility
         endpoint = `http://${IP}:3000/api/faculty/self-tasks/${taskId}/complete`;
+        console.log(`Using complete endpoint: ${endpoint}`);
       } else {
         // Use the general status update endpoint
         endpoint = `http://${IP}:3000/api/faculty/self-tasks/${taskId}/status`;
         requestBody = { status: newStatus };
+        console.log(`Using status update endpoint: ${endpoint} with status: ${newStatus}`);
       }
+      
+      // First update the task in the local state for immediate UI feedback
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId ? { ...task, status: newStatus } : task
+        )
+      );
+      
+      // Make the API call
+      console.log('Sending API request...');
+      console.log('Request details:', {
+        endpoint,
+        method: 'PATCH',
+        requestBody,
+        headers: { Authorization: `Bearer ${token.substring(0, 10)}...` } // Only log part of the token for security
+      });
       
       const response = await axios.patch(endpoint, requestBody, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log('API response:', response.data);
 
       if (response.data.success) {
         const statusMessages = {
@@ -428,6 +453,8 @@ const HomeScreen = ({ navigation, facultyProfile }) => {
           'in_progress': 'Task started successfully',
           'completed': 'Task completed successfully'
         };
+        
+        console.log(`Task ${taskId} status updated successfully to ${newStatus}`);
         
         Alert.alert(
           'Success',
@@ -437,10 +464,39 @@ const HomeScreen = ({ navigation, facultyProfile }) => {
             fetchTasks('self'); // Refresh the tasks
           }}]
         );
+      } else {
+        throw new Error('API returned success: false');
       }
     } catch (error) {
-      console.error('Error updating task status:', error.response?.data || error);
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update task status. Please try again.');
+      console.error('Error updating task status:', error);
+      
+      // Log detailed error information
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+        console.error('Error response headers:', error.response.headers);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('Error request:', error.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.error('Error message:', error.message);
+      }
+      
+      // Get user-friendly error message
+      const errorMessage = error.response?.data?.error || 
+                          error.message || 
+                          'Failed to update task status. Please try again.';
+      
+      console.error('Error details:', errorMessage);
+      
+      Alert.alert(
+        'Error', 
+        errorMessage,
+        [{ text: 'OK', onPress: () => fetchTasks('self') }] // Refresh to ensure UI is in sync with server
+      );
     } finally {
       setIsLoading(false);
     }
@@ -517,7 +573,6 @@ const HomeScreen = ({ navigation, facultyProfile }) => {
               
               if (currentStatus === 'pending') {
                 quickActions = [
-                  { text: 'Start Task', onPress: () => updateTaskStatus(item.id, 'in_progress') },
                   { text: 'Mark Complete', onPress: () => updateTaskStatus(item.id, 'completed') }
                 ];
               } else if (currentStatus === 'in_progress') {
@@ -897,25 +952,7 @@ const HomeScreen = ({ navigation, facultyProfile }) => {
                     {/* Status Change Buttons for Self-Assigned Tasks */}
                     {activeTab === 'self' && (
                       <View style={{flexDirection:'row', alignItems:'center', flexWrap:'wrap'}}>
-                        {selectedTask.status.toLowerCase() === 'pending' && (
-                          <TouchableOpacity
-                            style={{
-                              backgroundColor:'#dbeafe',
-                              borderRadius:8,
-                              paddingHorizontal:12,
-                              paddingVertical:6,
-                              flexDirection:'row',
-                              alignItems:'center',
-                              marginRight:8,
-                              marginBottom:4
-                            }}
-                            onPress={() => updateTaskStatus(selectedTask.id, 'in_progress')}
-                            disabled={isLoading}
-                          >
-                            <MaterialIcons name="play-arrow" size={16} color="#3b82f6" />
-                            <Text style={{color:'#3b82f6', fontWeight:'600', marginLeft:4}}>Start</Text>
-                          </TouchableOpacity>
-                        )}
+                        {/* Start button removed */}
                         
                         {selectedTask.status.toLowerCase() === 'in_progress' && (
                           <TouchableOpacity

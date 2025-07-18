@@ -183,8 +183,9 @@ app.use('/api/chat', chatRoutes);
 
 const PORT = process.env.PORT || 3000;
 
-// Start the server with Socket.io
-server.listen(PORT, IP, () => {
+// Start the server with Socket.io - bind to all interfaces for mobile access
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://${IP}:${PORT}`);
+  console.log(`Server accessible from external devices on http://${IP}:${PORT}`);
   console.log(`Socket.io server running on port ${PORT}`);
 });

@@ -224,7 +224,7 @@ router.get('/tickets', auth, async (req, res) => {
         'ORDER BY t.created_at DESC'
       );
       
-      // Process tickets to add approver info
+      // Process tickets to add approver info and ensure requested_updates is properly formatted
       const processedTickets = tickets.map(ticket => {
         let approverInfo = null;
         
@@ -240,9 +240,44 @@ router.get('/tickets', auth, async (req, res) => {
           };
         }
         
+        // Ensure requested_updates is properly formatted JSON string
+        let requestedUpdates = ticket.requested_updates;
+        
+        console.log('Processing ticket', ticket.id, 'requested_updates:', requestedUpdates, 'type:', typeof requestedUpdates);
+        
+        if (requestedUpdates) {
+          if (typeof requestedUpdates === 'string') {
+            try {
+              // Try to parse and re-stringify to ensure valid JSON
+              JSON.parse(requestedUpdates);
+            } catch (e) {
+              console.error('Invalid JSON in requested_updates for ticket', ticket.id, ':', requestedUpdates);
+              // If parsing fails, create a default message
+              requestedUpdates = JSON.stringify({
+                message: "Student has requested permission to update their profile information. Specific changes will be made once approved."
+              });
+            }
+          } else if (typeof requestedUpdates === 'object') {
+            // If it's already an object, stringify it
+            console.log('Converting object to string for ticket', ticket.id);
+            requestedUpdates = JSON.stringify(requestedUpdates);
+          } else {
+            console.log('Unexpected type for requested_updates:', typeof requestedUpdates);
+            requestedUpdates = JSON.stringify({
+              message: "Student has requested permission to update their profile information. Specific changes will be made once approved."
+            });
+          }
+        } else {
+          // If no requested_updates, provide default
+          requestedUpdates = JSON.stringify({
+            message: "Student has requested permission to update their profile information. Specific changes will be made once approved."
+          });
+        }
+        
         return {
           ...ticket,
           approver: approverInfo,
+          requested_updates: requestedUpdates,
           // Remove redundant fields
           admin_approver_name: undefined,
           faculty_approver_name: undefined

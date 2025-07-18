@@ -430,96 +430,98 @@ function generateExecutiveTemplate(resumeData, studentInfo, stream, layout = 'si
  * Minimalist template - Clean, white-space focused design
  */
 function generateMinimalistTemplate(resumeData, studentInfo, stream, layout = 'single-column') {
+  // Create a new PDF document
   const doc = new PDFDocument({
     margins: { top: 60, bottom: 60, left: 60, right: 60 },
     size: 'A4',
   });
   
+  // Pipe the PDF to the response
   doc.pipe(stream);
 
-  // Minimalist color palette - Simple and clean
-  const primaryColor = '#2d3748';    // Dark gray
-  const accentColor = '#4a5568';     // Medium gray
-  const lightColor = '#718096';      // Light gray
-  const lineColor = '#e2e8f0';       // Very light gray
-  const backgroundColor = '#ffffff';  // Pure white
+  // Colors
+  const darkGray = '#2d3748';
+  const mediumGray = '#4a5568';
+  const lightGray = '#718096';
+  const veryLightGray = '#e2e8f0';
+  const white = '#ffffff';
 
-  // Clean white background
-  doc.rect(0, 0, doc.page.width, doc.page.height).fill(backgroundColor);
+  // Background
+  doc.rect(0, 0, doc.page.width, doc.page.height).fill(white);
 
-  // Minimalist header - Simple and elegant
-  let currentY = 60;
+  // Header
+  let y = 60;
   
-  // Name with minimalist typography
+  // Name
   doc.fontSize(36)
-     .font('Helvetica-Light')
-     .fillColor(primaryColor)
-     .text(studentInfo.name, 0, currentY, { 
+     .font('Helvetica')
+     .fillColor(darkGray)
+     .text(studentInfo.name || 'Student Name', 0, y, { 
        width: doc.page.width,
        align: 'center'
      });
-  currentY = doc.y + 10;
+  y = doc.y + 10;
 
-  // Simple separator line
-  doc.moveTo(doc.page.width / 2 - 50, currentY)
-     .lineTo(doc.page.width / 2 + 50, currentY)
-     .strokeColor(lineColor)
+  // Separator line
+  doc.moveTo(doc.page.width / 2 - 50, y)
+     .lineTo(doc.page.width / 2 + 50, y)
+     .strokeColor(veryLightGray)
      .lineWidth(1)
      .stroke();
-  currentY += 20;
+  y += 20;
 
-  // Contact information - minimalist style
+  // Contact info
   let contactInfo = [];
   if (studentInfo.email) contactInfo.push(studentInfo.email);
   if (studentInfo.branch) contactInfo.push(studentInfo.branch);
   
   doc.fontSize(11)
      .font('Helvetica')
-     .fillColor(accentColor)
-     .text(contactInfo.join(' â€¢ '), 0, currentY, { 
+     .fillColor(mediumGray)
+     .text(contactInfo.join(' • '), 0, y, { 
        width: doc.page.width,
        align: 'center'
      });
-  currentY = doc.y + 40;
+  y = doc.y + 40;
 
   // Content area
   const contentWidth = doc.page.width - 120;
   const leftMargin = 60;
 
-  // Helper function for minimalist sections
-  function addMinimalistSection(title, content, yPos) {
+  // Add a section
+  function addSection(title, content, yPos) {
     if (!content) return yPos;
     
-    // Clean section title
+    // Section title
     doc.fontSize(14)
-       .font('Helvetica-Bold')
-       .fillColor(primaryColor)
+       .font('Helvetica')
+       .fillColor(darkGray)
        .text(title.toUpperCase(), leftMargin, yPos);
     yPos += 20;
     
-    // Simple underline
+    // Underline
     doc.moveTo(leftMargin, yPos)
        .lineTo(leftMargin + 100, yPos)
-       .strokeColor(lineColor)
+       .strokeColor(veryLightGray)
        .lineWidth(1)
        .stroke();
     yPos += 20;
     
-    // Content with generous spacing
+    // Content
     const lines = content.split('\n').filter(line => line.trim());
     lines.forEach(line => {
       const trimmedLine = line.trim();
       if (!trimmedLine) return;
       
-      // Clean bullet points
+      // Handle bullet points
       let displayLine = trimmedLine;
-      if (displayLine.startsWith('â€¢') || displayLine.startsWith('-')) {
+      if (displayLine.startsWith('-') || displayLine.startsWith('*')) {
         displayLine = displayLine.substring(1).trim();
       }
       
       doc.fontSize(11)
          .font('Helvetica')
-         .fillColor(accentColor)
+         .fillColor(mediumGray)
          .text(displayLine, leftMargin, yPos, { 
            width: contentWidth,
            lineGap: 4
@@ -530,17 +532,18 @@ function generateMinimalistTemplate(resumeData, studentInfo, stream, layout = 's
     return yPos + 25;
   }
 
-  // Minimalist sections with generous spacing
-  currentY = addMinimalistSection('About', resumeData.objective, currentY);
-  currentY = addMinimalistSection('Experience', resumeData.experience, currentY);
-  currentY = addMinimalistSection('Education', resumeData.education, currentY);
-  currentY = addMinimalistSection('Skills', resumeData.skills, currentY);
-  currentY = addMinimalistSection('Projects', resumeData.projects, currentY);
-  currentY = addMinimalistSection('Languages', resumeData.languages, currentY);
-  currentY = addMinimalistSection('Certifications', resumeData.certifications, currentY);
-  currentY = addMinimalistSection('Achievements', resumeData.achievements, currentY);
-  currentY = addMinimalistSection('Additional Information', resumeData.additional_info, currentY);
+  // Add all sections
+  y = addSection('About', resumeData.objective, y);
+  y = addSection('Experience', resumeData.experience, y);
+  y = addSection('Education', resumeData.education, y);
+  y = addSection('Skills', resumeData.skills, y);
+  y = addSection('Projects', resumeData.projects, y);
+  y = addSection('Languages', resumeData.languages, y);
+  y = addSection('Certifications', resumeData.certifications, y);
+  y = addSection('Achievements', resumeData.achievements, y);
+  y = addSection('Additional Information', resumeData.additional_info, y);
 
+  // Finalize the PDF
   doc.end();
 }
 

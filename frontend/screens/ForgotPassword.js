@@ -16,6 +16,7 @@ import {
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { IP } from '../ip';
 
 const ForgotPassword = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -32,7 +33,6 @@ const ForgotPassword = ({ navigation }) => {
 
       // Try all user types to find the correct one
       const userTypes = ['student', 'faculty', 'admin'];
-      const IP = '192.168.29.128'; // Change to your backend IP if needed
       
       let success = false;
       let lastError = null;

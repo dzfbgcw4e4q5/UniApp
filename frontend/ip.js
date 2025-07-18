@@ -1,5 +1,5 @@
 // Export the server IP address
-export const IP = '192.168.29.128';
+export const IP = '10.144.48.20';
 console.log(`App connecting to server at: ${IP}`);
 
 // Add a function to test the connection to the server

@@ -16,6 +16,17 @@ const auth = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('Auth middleware - Decoded user:', decoded);
     
+    // Ensure user ID is a number
+    if (decoded.id) {
+      decoded.id = Number(decoded.id);
+    }
+    
+    console.log('Auth middleware - Normalized user:', {
+      id: decoded.id,
+      role: decoded.role,
+      idType: typeof decoded.id
+    });
+    
     req.user = decoded;
     next();
   } catch (error) {

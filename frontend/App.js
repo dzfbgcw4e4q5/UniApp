@@ -92,10 +92,22 @@ const AdminStackScreen = () => {
 // Suppress the warning in both Metro and the device/emulator console
 LogBox.ignoreLogs([
   'Warning: Text strings must be rendered within a <Text> component',
+  'Reduced motion setting is enabled on this device',
+  'Error fetching resume: [AxiosError: Request failed with status code 404]',
+  'Request failed with status code 404',
+  'Registration error: [AxiosError: Request failed with status code 400]',
+  'Network request failed',
+  'Password reset error:',
 ]);
 if (typeof console !== 'undefined' && console.error) {
   const suppressed = [
     'Warning: Text strings must be rendered within a <Text> component',
+    'Reduced motion setting is enabled on this device',
+    'Error fetching resume: [AxiosError: Request failed with status code 404]',
+    'Request failed with status code 404',
+    'Registration error: [AxiosError: Request failed with status code 400]',
+    'Network request failed',
+    'Password reset error:',
   ];
   const origConsoleError = console.error;
   console.error = (...args) => {

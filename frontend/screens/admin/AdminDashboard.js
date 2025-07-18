@@ -2158,15 +2158,68 @@ const TicketsScreen = () => {
                       <View style={styles.updatesBox}>
                         {(() => {
                           try {
-                            const updates = JSON.parse(selectedTicket.requested_updates);
-                            return Object.entries(updates).map(([key, value]) => (
+                            // Debug logging
+                            console.log('Processing requested_updates:', selectedTicket.requested_updates);
+                            console.log('Type of requested_updates:', typeof selectedTicket.requested_updates);
+                            
+                            // Check if requested_updates exists and is valid
+                            if (!selectedTicket.requested_updates) {
+                              console.log('No requested_updates data available');
+                              return <Text style={styles.updateError}>No update data available</Text>;
+                            }
+                            
+                            // Check if it's a string and empty
+                            if (typeof selectedTicket.requested_updates === 'string' && selectedTicket.requested_updates.trim() === '') {
+                              console.log('Empty requested_updates string');
+                              return <Text style={styles.updateError}>No update data available</Text>;
+                            }
+                            
+                            // Try to parse as JSON
+                            let updates;
+                            if (typeof selectedTicket.requested_updates === 'string') {
+                              console.log('Parsing string requested_updates');
+                              updates = JSON.parse(selectedTicket.requested_updates);
+                            } else if (typeof selectedTicket.requested_updates === 'object') {
+                              console.log('Using object requested_updates directly');
+                              updates = selectedTicket.requested_updates;
+                            } else {
+                              console.log('Unexpected type for requested_updates:', typeof selectedTicket.requested_updates);
+                              return <Text style={styles.updateError}>Invalid update data type</Text>;
+                            }
+                            
+                            // Validate that updates is an object
+                            if (!updates || typeof updates !== 'object') {
+                              return <Text style={styles.updateError}>Invalid update data format</Text>;
+                            }
+                            
+                            // Check if object has entries
+                            const entries = Object.entries(updates);
+                            if (entries.length === 0) {
+                              return <Text style={styles.updateInfo}>Student has requested permission to update their profile information. Specific changes will be made once approved.</Text>;
+                            }
+                            
+                            // Check if this is a message-only update (when student requests permission)
+                            if (entries.length === 1 && updates.message) {
+                              return <Text style={styles.updateInfo}>{updates.message}</Text>;
+                            }
+                            
+                            return entries.map(([key, value]) => (
                               <View key={key} style={styles.updateRow}>
-                                <Text style={styles.updateKey}>{key}:</Text>
-                                <Text style={styles.updateValue}>{String(value)}</Text>
+                                <Text style={styles.updateKey}>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</Text>
+                                <Text style={styles.updateValue}>{String(value || 'N/A')}</Text>
                               </View>
                             ));
                           } catch (e) {
-                            return <Text style={styles.updateError}>Invalid update data</Text>;
+                            console.error('Error parsing requested updates:', e);
+                            console.error('Raw data:', selectedTicket.requested_updates);
+                            return (
+                              <View>
+                                <Text style={styles.updateError}>Unable to parse update data</Text>
+                                <Text style={styles.updateErrorDetails}>
+                                  Raw data: {String(selectedTicket.requested_updates).substring(0, 100)}...
+                                </Text>
+                              </View>
+                            );
                           }
                         })()}
                       </View>
@@ -4224,6 +4277,18 @@ const styles = StyleSheet.create({
   updateError: {
     fontSize: 14,
     color: '#ef4444',
+  },
+  updateErrorDetails: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 5,
+    fontStyle: 'italic',
+  },
+  updateInfo: {
+    fontSize: 14,
+    color: '#3b82f6',
+    fontStyle: 'italic',
+    lineHeight: 20,
   },
   responseContainer: {
     marginTop: 10,

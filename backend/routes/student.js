@@ -700,9 +700,28 @@ router.post('/profile-update-ticket', auth, async (req, res) => {
     );
 
     // Convert requested_updates to string if it's an object
-    const updatesString = typeof requested_updates === 'object' ?
-      JSON.stringify(requested_updates) :
-      requested_updates;
+    // Also handle the case where requested_updates is empty or null
+    let updatesString;
+    if (requested_updates) {
+      if (typeof requested_updates === 'object') {
+        // If it's an empty object, provide a default message
+        const objectKeys = Object.keys(requested_updates);
+        if (objectKeys.length === 0) {
+          updatesString = JSON.stringify({
+            message: "Student has requested permission to update their profile information. Specific changes will be made once approved."
+          });
+        } else {
+          updatesString = JSON.stringify(requested_updates);
+        }
+      } else {
+        updatesString = requested_updates;
+      }
+    } else {
+      // If no requested_updates provided, use default
+      updatesString = JSON.stringify({
+        message: "Student has requested permission to update their profile information. Specific changes will be made once approved."
+      });
+    }
 
     // Check if visible_to column exists
     try {

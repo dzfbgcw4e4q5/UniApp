@@ -210,7 +210,7 @@ const Login = ({ navigation }) => {
           'Unable to connect to the university portal. Please check that:\n\n' +
           '1. The server is running\n' +
           '2. Your device is connected to the same network as the server\n' +
-          '3. The server IP address (192.168.0.68) is correct\n\n' +
+          '3. The server IP address (192.168.0.67) is correct\n\n' +
           'Technical details: ' + error.message
         );
       } else if (error.response) {
